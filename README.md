@@ -6,6 +6,8 @@ Sistema de reservas para agencia de viajes desarrollado en Python con POO, SQLit
 
 | Hash | Descripción |
 | --- | --- |
+| `76cec0e` | Integración con API de dólar y persistencia local |
+| `cb5bb0a` | Actualizar bitácora de commits en README.md con la persistencia SQLite |
 | `a0f238c` | Implementación de persistencia SQLite y autenticación |
 | `83bc409` | Actualizar bitácora de commits en README.md |
 | `e7e4997` | Implementación de reservas detalles y reglas de negocio |
