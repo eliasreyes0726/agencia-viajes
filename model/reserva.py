@@ -5,7 +5,8 @@ from model.excepciones import (
 
 from model.paquete_internacional import (
     PaqueteInternacional
-) 
+)
+
 
 class Reserva:
 
@@ -38,13 +39,11 @@ class Reserva:
 
         self.detalles = []
 
-        self.anticipo = anticipo 
+        self.anticipo = anticipo
 
     @property
     def anticipo(self):
-
         return self._anticipo
-
 
     @anticipo.setter
     def anticipo(
@@ -55,12 +54,11 @@ class Reserva:
         valor = float(valor)
 
         if valor < 0:
-
             raise ValueError(
                 "El anticipo no puede ser negativo."
             )
 
-        self._anticipo = valor 
+        self._anticipo = valor
 
     def agregar_detalle(
         self,
@@ -69,7 +67,8 @@ class Reserva:
 
         self.detalles.append(
             detalle
-        ) 
+        )
+
     def total(self):
 
         total_detalles = sum(
@@ -82,9 +81,11 @@ class Reserva:
             + total_detalles
         )
 
-        def validar_confirmacion(self):
+    def validar_confirmacion(self):
 
-         if isinstance(
+        # Regla 1:
+        # los paquetes internacionales requieren pasaporte
+        if isinstance(
             self.paquete,
             PaqueteInternacional
         ):
@@ -94,20 +95,25 @@ class Reserva:
                 raise ValueError(
                     "Un paquete internacional "
                     "requiere pasaporte válido."
-                ) 
-                if not self.proveedor.tiene_cupos():
+                )
 
-                  raise SinCuposError(
-                "No se puede confirmar "
-                "la reserva porque el "
-                "proveedor no tiene cupos."
+        # Regla 2:
+        # no se puede reservar si no hay cupos
+        if not self.proveedor.tiene_cupos():
+
+            raise SinCuposError(
+                "No se puede confirmar la reserva "
+                "porque el proveedor no tiene cupos."
             )
-         minimo = (
+
+        # Regla 3:
+        # anticipo mínimo del 50%
+        minimo_anticipo = (
             self.total()
             * 0.50
         )
 
-        if self.anticipo < minimo:
+        if self.anticipo < minimo_anticipo:
 
             raise AnticipoInsuficienteError(
                 "El anticipo debe ser "
@@ -115,6 +121,5 @@ class Reserva:
             )
 
         return True
-                   
                                
 
