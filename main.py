@@ -1,18 +1,46 @@
-from model.cliente import Cliente
 
 
-try:
-    cliente = Cliente(
-        "Juan Pérez",
-        "12.345.678-9",
-        "AB123456"
-    )
 
-    print("Cliente creado correctamente")
-    print("Nombre:", cliente.nombre)
-    print("RUT:", cliente.rut)
-    print("Pasaporte:", cliente.pasaporte)
+from model.paquete_nacional import PaqueteNacional
+from model.paquete_internacional import PaqueteInternacional
+from model.paquete_crucero import PaqueteCrucero
 
-except ValueError as error:
-    print("Dato rechazado:")
-    print(error)
+
+dolar = 950
+
+
+nacional = PaqueteNacional(
+    1,
+    "San Pedro de Atacama",
+    500000,
+    1
+)
+
+
+internacional = PaqueteInternacional(
+    2,
+    "Miami",
+    1000,
+    1
+)
+
+
+crucero = PaqueteCrucero(
+    3,
+    "Crucero Caribe",
+    1000,
+    1
+)
+
+
+print(
+    nacional.calcular_precio_final(dolar)
+)
+
+print(
+    internacional.calcular_precio_final(dolar)
+)
+
+print(
+    crucero.calcular_precio_final(dolar)
+) 
