@@ -1,8 +1,27 @@
-class AnticipoInsuficienteError(Exception):
-
+class AgenciaError(Exception):
+    """Excepción base para el sistema de agencia de viajes."""
     pass
 
 
-class SinCuposError(Exception):
+class AnticipoInsuficienteError(AgenciaError):
+    pass
 
-    pass 
+
+class SinCuposError(AgenciaError):
+    pass
+
+
+class RecursoNoEncontradoError(AgenciaError):
+    pass
+
+
+class APITipoCambioError(AgenciaError):
+    pass
+
+
+class ValidacionError(AgenciaError):
+    pass
+
+
+class AutenticacionError(AgenciaError):
+    pass

@@ -10,211 +10,102 @@ from model.cliente import Cliente
 from model.proveedor import Proveedor
 from model.agente_viajes import AgenteViajes
 from model.paquete_internacional import PaqueteInternacional
+from model.paquete_nacional import PaqueteNacional
 from model.detalle_reserva import DetalleReserva
-from model.reserva import Reserva
+from model.reserva import Reserva, EstadoReserva
+from model.excepciones import (
+    SinCuposError,
+    AnticipoInsuficienteError,
+    RecursoNoEncontradoError,
+    APITipoCambioError
+)
 
 from services.auth_service import crear_hash_password
+from services.tipo_cambio_service import TipoCambioService
 
 
-# 1. Reiniciar y crear tablas
+print("=== INICIANDO PRUEBA COMPLETA DE MEJORAS Y PERSISTENCIA ===")
+
+# 1. Reiniciar y crear tablas de la base de datos
 if DB_PATH.exists():
     os.remove(DB_PATH)
 
 crear_tablas()
+print("1. Tablas SQLite creadas correctamente.")
 
-print("Tablas creadas correctamente.")
+# 2. Consultar el Dólar en Vivo desde la API REST con Fallback
+tipo_cambio_service = TipoCambioService()
+dolar_actual = tipo_cambio_service.obtener_dolar_con_fallback(valor_defecto=950.0)
+print(f"2. Valor del Dólar obtenido (API / Fallback): ${dolar_actual:.2f} CLP")
 
-
-# 2. Crear cliente
-cliente = Cliente(
-    "Juan Pérez",
-    "12.345.678-9",
-    "AB123456"
-)
-
+# 3. Crear y Guardar Cliente
 cliente_dao = ClienteDAO()
+cliente = Cliente("Juan Pérez", "12.345.678-9", "AB123456")
+cliente_id = cliente_dao.crear(cliente)
+print(f"3. Cliente guardado exitosamente con ID: {cliente_id}")
 
-cliente_id = cliente_dao.crear(
-    cliente
-)
-
-print(
-    "Cliente guardado con ID:",
-    cliente_id
-)
-
-
-# 3. Crear proveedor
-proveedor = Proveedor(
-    None,
-    "Proveedor Internacional",
-    5
-)
-
+# 4. Crear y Guardar Proveedor
 proveedor_dao = ProveedorDAO()
-
-proveedor_id = proveedor_dao.crear(
-    proveedor
-)
-
+proveedor = Proveedor(None, "Proveedor Internacional", 5)
+proveedor_id = proveedor_dao.crear(proveedor)
 proveedor.id_proveedor = proveedor_id
+print(f"4. Proveedor guardado con ID: {proveedor_id}")
 
-print(
-    "Proveedor guardado con ID:",
-    proveedor_id
-)
-
-
-# 4. Crear agente
-password_hash = crear_hash_password(
-    "ClaveSegura123"
-)
-
-agente = AgenteViajes(
-    "María González",
-    "11.111.111-1",
-    "maria.agente",
-    password_hash
-)
-
+# 5. Crear y Guardar Trabajador (Agente de Viajes)
 trabajador_dao = TrabajadorDAO()
+agente = AgenteViajes("María González", "11.111.111-1", "maria.agente", crear_hash_password("ClaveSegura123"))
+agente_id = trabajador_dao.crear(agente, "agente")
+print(f"5. Agente de Viajes guardado con ID: {agente_id}")
 
-agente_id = trabajador_dao.crear(
-    agente,
-    "agente"
-)
-
-print(
-    "Agente guardado con ID:",
-    agente_id
-)
-
-
-# 5. Crear paquete internacional
-paquete = PaqueteInternacional(
-    None,
-    "Miami 7 noches",
-    1000,
-    proveedor_id
-)
-
+# 6. Crear, Guardar y Probar CRUD en PaqueteDAO
 paquete_dao = PaqueteDAO()
+paquete_int = PaqueteInternacional(None, "Miami 7 noches", 1000, proveedor_id)
+paquete_id = paquete_dao.crear(paquete_int, "internacional")
+print(f"6. Paquete Internacional guardado con ID: {paquete_id}")
 
-paquete_id = paquete_dao.crear(
-    paquete,
-    "internacional"
-)
+# Probar lectura en PaqueteDAO
+paquete_recuperado = paquete_dao.obtener_por_id(paquete_id)
+print(f"   - Paquete recuperado desde DAO: '{paquete_recuperado.nombre}' (Tipo: {type(paquete_recuperado).__name__})")
 
-print(
-    "Paquete guardado con ID:",
-    paquete_id
-)
+precio_paquete_clp = paquete_recuperado.calcular_precio_final(tipo_cambio=dolar_actual)
+print(f"   - Precio paquete en CLP: ${precio_paquete_clp:,.2f}")
 
-
-# 6. Para esta prueba usamos un dólar fijo
-dolar = 950
-
-precio_paquete = paquete.calcular_precio_final(
-    dolar
-)
-
-print(
-    "Precio paquete:",
-    precio_paquete
-)
-
-
-# 7. Crear reserva
+# 7. Crear Reserva con Reglas de Negocio y Estado Enum
 reserva = Reserva(
-    cliente,
-    agente,
-    paquete,
-    proveedor,
-    "2026-12-15",
-    precio_paquete,
-    0,
-    dolar
+    cliente=cliente,
+    agente=agente,
+    paquete=paquete_recuperado,
+    proveedor=proveedor,
+    fecha_viaje="2026-12-15",
+    precio_paquete_clp=precio_paquete_clp,
+    anticipo=0,
+    tipo_cambio=dolar_actual
 )
 
+reserva.agregar_detalle(DetalleReserva("hotel", "Hotel 7 noches", 1, 150000))
+reserva.agregar_detalle(DetalleReserva("seguro", "Seguro de viaje", 1, 50000))
 
-# 8. Agregar detalles
-hotel = DetalleReserva(
-    "hotel",
-    "Hotel 7 noches",
-    1,
-    150000
-)
+total_reserva = reserva.total()
+print(f"7. Total de la reserva: ${total_reserva:,.2f} CLP")
 
-seguro = DetalleReserva(
-    "seguro",
-    "Seguro de viaje",
-    1,
-    50000
-)
+# Aplicar pago del 50% mínimo para confirmar
+reserva.pagar_saldo(total_reserva * 0.50)
+print(f"   - Anticipo aplicado: ${reserva.anticipo:,.2f} CLP | Saldo pendiente: ${reserva.saldo_pendiente():,.2f} CLP")
 
-reserva.agregar_detalle(
-    hotel
-)
+# Validar confirmación
+reserva.validar_confirmacion()
+print(f"   - Estado de la reserva tras validación: {reserva.estado.value}")
 
-reserva.agregar_detalle(
-    seguro
-)
-
-
-# 9. Calcular el total
-print(
-    "Total reserva:",
-    reserva.total()
-)
-
-
-# 10. Pagar exactamente el 50%
-reserva.anticipo = (
-    reserva.total()
-    * 0.50
-)
-
-print(
-    "Anticipo:",
-    reserva.anticipo
-)
-
-
-# 11. Guardar reserva completa
+# 8. Guardar Reserva y sus detalles en SQLite
 reserva_dao = ReservaDAO()
+reserva_id = reserva_dao.crear(reserva, cliente_id, agente_id, paquete_id)
+print(f"8. Reserva guardada exitosamente en BD con ID: {reserva_id}")
 
-reserva_id = reserva_dao.crear(
-    reserva,
-    cliente_id,
-    agente_id,
-    paquete_id
-)
+# 9. Prueba de Captura de Excepciones Específicas
+print("9. Probando captura de excepciones propias:")
+try:
+    paquete_dao.obtener_por_id(999)
+except RecursoNoEncontradoError as err:
+    print(f"   - Capturada RecursoNoEncontradoError exitosamente: '{err}'")
 
-print(
-    "Reserva guardada correctamente."
-)
-
-print(
-    "ID reserva:",
-    reserva_id
-)
-
-
-# 12. Leer la reserva y sus detalles
-cabecera, detalles = reserva_dao.obtener(
-    reserva_id
-)
-
-print(
-    "Cabecera:",
-    cabecera
-)
-
-print(
-    "Detalles:"
-)
-
-for detalle in detalles:
-    print(
-        detalle
-    )
+print("=== PRUEBAS Y VERIFICACIÓN COMPLETADAS CON ÉXITO ===")
