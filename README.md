@@ -6,6 +6,8 @@ Sistema de reservas para agencia de viajes desarrollado en Python con POO, SQLit
 
 | Hash | Descripción |
 | --- | --- |
+| `4bb8258` | Añadir script de prueba de integracion de clases y DAOs en main.py |
+| `bc0ad79` | Actualizar bitácora de commits en README.md con el DAO de reservas |
 | `7d80483` | Implementación del DAO de reservas |
 | `16d5264` | Actualizar bitácora de commits en README.md con la API de dólar |
 | `76cec0e` | Integración con API de dólar y persistencia local |
