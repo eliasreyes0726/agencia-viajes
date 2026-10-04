@@ -6,6 +6,8 @@ Sistema de reservas para agencia de viajes desarrollado en Python con POO, SQLit
 
 | Hash | Descripción |
 | --- | --- |
+| `4a8f5ac` | Completar PaqueteDAO, excepciones de dominio y fallback de tipo de cambio |
+| `4c69da0` | Actualizar bitácora de commits en README.md con la mejora de Reserva |
 | `e3001f8` | Incorporar Enum EstadoReserva y lógica de saldos, pagos y cancelación en Reserva |
 | `b24bf00` | Actualizar bitácora de commits en README.md |
 | `18a57e0` | Actualizar proyecto agencia de viajes |
